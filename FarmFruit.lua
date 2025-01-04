@@ -11,7 +11,8 @@ _G.HoHoCustomConfig = {
     AutoCollectFruit = true,
     AutoRandomFruit = true,
     CheckFruitStoreable = true,
-    Webhook = "https://discord.com/api/webhooks/1321976551134199928/RMHcjSEoYjN56f96x-P9Gqtuw5QDd1MzyIEzEUoPAFBQ66_6B2qGWjzBRKoB1A2gPcab",
+    Webhook = "https://discord.com/api/webhooks/1324868699584335892/OZSOrH-juPYMzAcZ4F78E3PXtHnc8q3SteoGHvPyb_AaCQuaXrO7L3IfIs8XIQGjbWDX",
+    SendWebhook = true,
     SendWebhookNewItem = true,
     FarmWithHop = true,
 }
