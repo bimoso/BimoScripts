@@ -5,12 +5,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
 
+-- Esperar a que el jugador local esté disponible
+local player = Players.LocalPlayer
+
 -- Variable para controlar el estado de los atributos mejorados
 local betterAttributesEnabled = false
 
 -- Función para crear una ventana de alerta
 local function createAlert(text)
-    local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
 
     -- Eliminar cualquier alerta existente
