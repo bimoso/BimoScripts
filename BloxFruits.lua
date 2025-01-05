@@ -1,4 +1,3 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/BloxFruits/refs/heads/main/Source.lua"))()
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -44,30 +43,31 @@ end
 -- Función para modificar los atributos de Bimosoo_0
 local function modifyAttributes(isBetter)
     local characters = Workspace:FindFirstChild("Characters")
+    local localPlayer = Players.LocalPlayer
     if characters then
-        local msrPand = characters:FindFirstChild("Bimosoo_0")
-        if msrPand then
+        local playerCharacter = characters:FindFirstChild(localPlayer.Name)
+        if playerCharacter then
             if isBetter then
                 -- Modificar los atributos de Bimosoo_0 a mejores valores
-                msrPand:SetAttribute("SpeedMultiplier", 13)
-                msrPand:SetAttribute("DashLength", 145)
-                msrPand:SetAttribute("DashSpeed", 1000)
-                msrPand:SetAttribute("FlashstepCooldown", 1)
-                msrPand:SetAttribute("SkyjumpBoost", 999)
-                print("Atributos de Bimosoo_0 mejorados")
+                playerCharacter:SetAttribute("SpeedMultiplier", 13)
+                playerCharacter:SetAttribute("DashLength", 145)
+                playerCharacter:SetAttribute("DashSpeed", 1000)
+                playerCharacter:SetAttribute("FlashstepCooldown", 1)
+                playerCharacter:SetAttribute("SkyjumpBoost", 999)
+                print("Atributos de " .. localPlayer.Name .. " mejorados")
                 createAlert("Cambio a transformación")
             else
                 -- Modificar los atributos de Bimosoo_0 a valores normales
-                msrPand:SetAttribute("SpeedMultiplier", 1.85)
-                msrPand:SetAttribute("DashLength", 100)
-                msrPand:SetAttribute("DashSpeed", 1000)
-                msrPand:SetAttribute("FlashstepCooldown", 1)
-                msrPand:SetAttribute("SkyjumpBoost", 999)
-                print("Atributos de Bimosoo_0 modificados")
+                playerCharacter:SetAttribute("SpeedMultiplier", 1.85)
+                playerCharacter:SetAttribute("DashLength", 100)
+                playerCharacter:SetAttribute("DashSpeed", 1000)
+                playerCharacter:SetAttribute("FlashstepCooldown", 1)
+                playerCharacter:SetAttribute("SkyjumpBoost", 999)
+                print("Atributos de " .. localPlayer.Name .. " modificados")
                 createAlert("Cambio a jugador")
             end
         else
-            warn("Bimosoo_0 no encontrado en Characters")
+            warn(localPlayer.Name .. " no encontrado en Characters")
         end
     else
         warn("Characters no encontrado en Workspace")
@@ -118,4 +118,4 @@ task.spawn(function()
         modifyAttributes(betterAttributesEnabled)
     end
 end)
-
+loadstring(game:HttpGet("https://raw.githubusercontent.com/realredz/BloxFruits/refs/heads/main/Source.lua"))()
