@@ -1,5 +1,5 @@
 local Settings = {
-    JoinTeam = "Marines"; -- Pirates/Marines
+    JoinTeam = "Pirates"; -- Pirates/Marines
     Translator = true; -- true/false
   }
   
