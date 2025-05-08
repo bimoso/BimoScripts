@@ -17,4 +17,4 @@ if placeId == 116495829188952 then
         game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("CreateParty"):FireServer(unpack(args))
     end
     
-do
+end
