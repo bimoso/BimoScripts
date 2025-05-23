@@ -178,12 +178,18 @@ for method, enabled in Pairs(methods) do
         local b;
         b = hookfunction(game[method], newcclosure(function(self, ...)
             local args = Serializer.FormatArguments(...)
-            local resultStr = (Type(result) == "table") and Serializer.Serialize(result) or tostring(result)
-            printf("game.%s(game, %s)\n\nRespuesta: %s\n\n", method, args, resultStr);
+            local result = b(self, ...)
+            local resultStr
+            if Type(result) == "table" then
+                resultStr = Serializer.Serialize(result)
+            else
+                resultStr = tostring(result)
+            end
+            printf("game.%s(game, %s)\n\nRespuesta: %s\n\n", method, args or "", resultStr or "")
             return result
         end));
     end;
-end;
+end
 
 if not debug.info(2, "f") then
     pconsole("You are running an outdated version, please use the loadstring at https://github.com/NotDSF/HttpSpy\n");
