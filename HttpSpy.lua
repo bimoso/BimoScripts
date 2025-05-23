@@ -178,8 +178,8 @@ for method, enabled in Pairs(methods) do
         local b;
         b = hookfunction(game[method], newcclosure(function(self, ...)
             local args = Serializer.FormatArguments(...)
-            local result = b(self, ...)
-            printf("game.%s(game, %s)\n\nRespuesta: %s\n\n", method, args, Serializer.Serialize(result));
+            local resultStr = (Type(result) == "table") and Serializer.Serialize(result) or tostring(result)
+            printf("game.%s(game, %s)\n\nRespuesta: %s\n\n", method, args, resultStr);
             return result
         end));
     end;
