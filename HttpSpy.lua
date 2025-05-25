@@ -38,6 +38,7 @@ local reqfunc = (syn or http).request;
 local libtype = syn and "syn" or "http";
 local hooked = {};
 local proxied = {};
+local isHookSetup = false;
 local methods = {
     HttpGet = not syn,
     HttpGetAsync = not syn,
@@ -122,20 +123,6 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
 
         OnRequest:Fire(RequestData);
 
-        -- Check for hooks BEFORE making the request
-        local hookFn
-        local hookedSnapshot = {}
-        for prefix, fn in Pairs(hooked) do
-            hookedSnapshot[prefix] = fn
-        end
-        
-        for prefix, fn in Pairs(hookedSnapshot) do
-            if RequestData.Url:sub(1, #prefix) == prefix then
-                hookFn = fn
-                break
-            end
-        end
-
         local ok, ResponseData = Pcall(__request, RequestData);
         if not ok then Error(ResponseData, 0) end;
 
@@ -148,6 +135,15 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
             local ok2, res = Pcall(game.HttpService.JSONDecode, game.HttpService, BackupData.Body);
             if ok2 then BackupData.Body = res end;
         end;
+
+        -- Check for hooks with better logic
+        local hookFn
+        for prefix, fn in Pairs(hooked) do
+            if RequestData.Url:sub(1, #prefix) == prefix then
+                hookFn = fn
+                break
+            end
+        end
 
         -- Apply hook if found and modify both BackupData and ResponseData
         if hookFn then
@@ -181,6 +177,8 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
     end)();
     return cyield();
 end));
+
+isHookSetup = true;
 
 if request then
     replaceclosure(request, reqfunc);
@@ -240,6 +238,9 @@ API.OnRequest = OnRequest.Event;
 
 function API:HookSynRequest(url, hook) 
     hooked[url] = hook;
+    if not isHookSetup then
+        pconsole("WARNING: Hook registrado antes de que HttpSpy esté completamente configurado\n");
+    end
 end;
 
 function API:ProxyHost(host, proxy) 
