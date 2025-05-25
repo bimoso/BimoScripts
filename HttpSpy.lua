@@ -36,7 +36,13 @@ local blocked = options.BlockedURLs;
 local enabled = true;
 local reqfunc = (syn or http).request;
 local libtype = syn and "syn" or "http";
-local hooked = {};
+
+-- Use global hooks table to persist between script loads
+if not getgenv()._HTTPSPY_GLOBAL_HOOKS then
+    getgenv()._HTTPSPY_GLOBAL_HOOKS = {}
+end
+local hooked = getgenv()._HTTPSPY_GLOBAL_HOOKS;
+
 local proxied = {};
 local isHookSetup = false;
 local methods = {
@@ -238,6 +244,7 @@ API.OnRequest = OnRequest.Event;
 
 function API:HookSynRequest(url, hook) 
     hooked[url] = hook;
+    getgenv()._HTTPSPY_GLOBAL_HOOKS[url] = hook; -- Ensure it's stored globally
     if not isHookSetup then
         pconsole("WARNING: Hook registrado antes de que HttpSpy esté completamente configurado\n");
     end
@@ -259,6 +266,7 @@ function API:UnHookSynRequest(url)
         error("url isn't hooked", 0);
     end;
     hooked[url] = nil;
+    getgenv()._HTTPSPY_GLOBAL_HOOKS[url] = nil;
 end
 
 function API:BlockUrl(url) 
