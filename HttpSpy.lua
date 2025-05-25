@@ -122,35 +122,37 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
 
         OnRequest:Fire(RequestData);
 
+        -- Check for hooks BEFORE making the request
+        local hookFn
+        local hookedSnapshot = {}
+        for prefix, fn in Pairs(hooked) do
+            hookedSnapshot[prefix] = fn
+        end
+        
+        for prefix, fn in Pairs(hookedSnapshot) do
+            if RequestData.Url:sub(1, #prefix) == prefix then
+                hookFn = fn
+                break
+            end
+        end
+
         local ok, ResponseData = Pcall(__request, RequestData);
         if not ok then Error(ResponseData, 0) end;
 
         local BackupData = {};
         for i,v in Pairs(ResponseData) do BackupData[i] = v end;
 
-        if BackupData.Headers["Content-Type"]
+        if BackupData.Headers and BackupData.Headers["Content-Type"]
         and match(BackupData.Headers["Content-Type"], "application/json")
         and options.AutoDecode then
             local ok2, res = Pcall(game.HttpService.JSONDecode, game.HttpService, BackupData.Body);
             if ok2 then BackupData.Body = res end;
         end;
 
-        -- Hook by prefix instead of exact match - BEFORE printing response
-        local hookFn
-        for prefix, fn in Pairs(hooked) do
-            if RequestData.Url:sub(1, #prefix) == prefix then
-                hookFn = fn
-                printf("DEBUG: Hook encontrado para URL: %s con prefijo: %s\n", RequestData.Url, prefix)
-                break
-            end
-        end
-
         -- Apply hook if found and modify both BackupData and ResponseData
         if hookFn then
-            printf("DEBUG: Ejecutando hook...\n")
             local success, modifiedResponse = Pcall(hookFn, DeepClone(ResponseData))
             if success and modifiedResponse then
-                printf("DEBUG: Hook retornó respuesta modificada\n")
                 ResponseData = modifiedResponse
                 -- Recreate BackupData completely from modified response
                 BackupData = {}
@@ -166,17 +168,6 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
                     local ok2, res = Pcall(game.HttpService.JSONDecode, game.HttpService, BackupData.Body);
                     if ok2 then BackupData.Body = res end;
                 end;
-            elseif success then
-                printf("DEBUG: Hook ejecutado pero no retornó respuesta modificada\n")
-                -- If hook doesn't return a modified response, just call it for side effects
-            else
-                printf("DEBUG: Error en hook: %s\n", tostring(modifiedResponse))
-            end
-        else
-            printf("DEBUG: No se encontró hook para URL: %s\n", RequestData.Url)
-            printf("DEBUG: Hooks disponibles:\n")
-            for prefix, fn in Pairs(hooked) do
-                printf("  - %s\n", prefix)
             end
         end
 
