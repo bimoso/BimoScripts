@@ -140,17 +140,23 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
         for prefix, fn in Pairs(hooked) do
             if RequestData.Url:sub(1, #prefix) == prefix then
                 hookFn = fn
+                printf("DEBUG: Hook encontrado para URL: %s con prefijo: %s\n", RequestData.Url, prefix)
                 break
             end
         end
 
         -- Apply hook if found and modify both BackupData and ResponseData
         if hookFn then
-            local modifiedResponse = hookFn(DeepClone(ResponseData))
-            if modifiedResponse then
+            printf("DEBUG: Ejecutando hook...\n")
+            local success, modifiedResponse = Pcall(hookFn, DeepClone(ResponseData))
+            if success and modifiedResponse then
+                printf("DEBUG: Hook retornó respuesta modificada\n")
                 ResponseData = modifiedResponse
-                -- Also update BackupData for display purposes
-                for i,v in Pairs(modifiedResponse) do BackupData[i] = v end;
+                -- Recreate BackupData completely from modified response
+                BackupData = {}
+                for i,v in Pairs(modifiedResponse) do 
+                    BackupData[i] = Type(v) == "table" and DeepClone(v) or v
+                end
                 
                 -- Re-decode JSON if modified Body is JSON and AutoDecode is enabled
                 if BackupData.Headers and BackupData.Headers["Content-Type"]
@@ -160,9 +166,17 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
                     local ok2, res = Pcall(game.HttpService.JSONDecode, game.HttpService, BackupData.Body);
                     if ok2 then BackupData.Body = res end;
                 end;
-            else
+            elseif success then
+                printf("DEBUG: Hook ejecutado pero no retornó respuesta modificada\n")
                 -- If hook doesn't return a modified response, just call it for side effects
-                hookFn(ResponseData)
+            else
+                printf("DEBUG: Error en hook: %s\n", tostring(modifiedResponse))
+            end
+        else
+            printf("DEBUG: No se encontró hook para URL: %s\n", RequestData.Url)
+            printf("DEBUG: Hooks disponibles:\n")
+            for prefix, fn in Pairs(hooked) do
+                printf("  - %s\n", prefix)
             end
         end
 
