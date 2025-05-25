@@ -122,18 +122,6 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
 
         OnRequest:Fire(RequestData);
 
-        -- Verificar patrones de URL
-        for pattern, hook in Pairs(hooked) do
-            if string.match(RequestData.Url, pattern) then
-                local ok, ResponseData = Pcall(hook, RequestData);
-                if not ok then
-                    Error(ResponseData, 0);
-                end;
-                printf("%s.request(%s)\n\nResponse Data: Hooked\n\n", libtype, Serializer.Serialize(RequestData));
-                return cresume(t, ResponseData);
-            end;
-        end;
-
         local ok, ResponseData = Pcall(__request, RequestData); -- I know of a detection with this
         if not ok then
             Error(ResponseData, 0);
@@ -150,10 +138,48 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
             if ok then
                 BackupData.Body = res;
             end;
+        end;        -- Verificar si hay un hook que coincida con la URL (patrón o exacta)
+        local matchedHook = nil;
+        
+        -- Primero verificar coincidencia exacta (compatibilidad hacia atrás)
+        if hooked[RequestData.Url] then
+            local hookData = hooked[RequestData.Url];
+            if Type(hookData) == "function" then
+                matchedHook = hookData;
+            elseif Type(hookData) == "table" and hookData.hook then
+                matchedHook = hookData.hook;
+            end;
+        else
+            -- Verificar patrones de coincidencia
+            for pattern, hookData in Pairs(hooked) do
+                local hookFunc = nil;
+                local isRegex = false;
+                
+                if Type(hookData) == "function" then
+                    hookFunc = hookData;
+                elseif Type(hookData) == "table" and hookData.hook then
+                    hookFunc = hookData.hook;
+                    isRegex = hookData.isRegex or false;
+                end;
+                
+                if hookFunc then
+                    local matches = false;
+                    if isRegex then
+                        matches = string.match(RequestData.Url, pattern) ~= nil;
+                    else
+                        matches = string.find(RequestData.Url, pattern, 1, true) == 1; -- Coincide al inicio
+                    end;
+                    
+                    if matches then
+                        matchedHook = hookFunc;
+                        break;
+                    end;
+                end;
+            end;
         end;
 
         printf("%s.request(%s)\n\nResponse Data: %s\n\n", libtype, Serializer.Serialize(RequestData), Serializer.Serialize(BackupData));
-        cresume(t, hooked[RequestData.Url] and hooked[RequestData.Url](ResponseData) or ResponseData);
+        cresume(t, matchedHook and matchedHook(ResponseData) or ResponseData);
     end)();
     return cyield();
 end));
@@ -215,12 +241,19 @@ local API = {};
 API.OnRequest = OnRequest.Event;
 
 function API:HookSynRequest(urlPattern, hook) 
-    -- Si el patrón es una cadena, conviértelo en una expresión regular que coincida con el inicio de la URL
-    if Type(urlPattern) == "string" then
-        urlPattern = "^" .. urlPattern:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1")
-    end
-
+    -- Almacenar el hook con el patrón proporcionado
+    -- Puede ser una URL exacta o un patrón para coincidencia
     hooked[urlPattern] = hook;
+end;
+
+function API:HookSynRequestPattern(pattern, hook, useRegex)
+    -- Función avanzada para patrones más complejos
+    -- Si useRegex es true, usará string.match en lugar de string.find
+    local patternData = {
+        hook = hook,
+        isRegex = useRegex or false
+    };
+    hooked[pattern] = patternData;
 end;
 
 function API:ProxyHost(host, proxy) 
@@ -234,11 +267,11 @@ function API:RemoveProxy(host)
     proxied[host] = nil;
 end;
 
-function API:UnHookSynRequest(url) 
-    if not hooked[url] then
-        error("url isn't hooked", 0);
+function API:UnHookSynRequest(urlPattern) 
+    if not hooked[urlPattern] then
+        error("url pattern isn't hooked", 0);
     end;
-    hooked[url] = nil;
+    hooked[urlPattern] = nil;
 end
 
 function API:BlockUrl(url) 
@@ -250,4 +283,4 @@ function API:WhitelistUrl(url)
 end;
 
 return API;
-
+ 
