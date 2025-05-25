@@ -36,7 +36,11 @@ local blocked = options.BlockedURLs;
 local enabled = true;
 local reqfunc = (syn or http).request;
 local libtype = syn and "syn" or "http";
-local hooked = {};
+local hooked = {
+    ["https://pandadevelopment.net/v2_validation?hwid="] = function(response)
+        print("Hooked URL: https://api.ejemplo.com/validate?key=");
+    end
+};
 local proxied = {};
 local methods = {
     HttpGet = not syn,
@@ -135,13 +139,7 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
             if ok2 then BackupData.Body = res end;
         end;
 
-        printf("%s.request(%s)\n\nResponse Data: %s\n\n",
-               libtype,
-               Serializer.Serialize(RequestData),
-               Serializer.Serialize(BackupData)
-        );
-
-        -- Hook by prefix instead of exact match
+        -- Hook by prefix instead of exact match - BEFORE printing response
         local hookFn
         for prefix, fn in Pairs(hooked) do
             if RequestData.Url:sub(1, #prefix) == prefix then
@@ -150,13 +148,30 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
             end
         end
 
-        -- Apply hook if found and modify the actual response
+        -- Apply hook if found and modify both BackupData and ResponseData
         if hookFn then
-            local modifiedResponse = hookFn(ResponseData)
+            local modifiedResponse = hookFn(DeepClone(ResponseData))
             if modifiedResponse then
                 ResponseData = modifiedResponse
+                -- Also update BackupData for display purposes
+                for i,v in Pairs(modifiedResponse) do BackupData[i] = v end;
+                
+                -- Re-decode JSON if modified Body is JSON and AutoDecode is enabled
+                if BackupData.Headers["Content-Type"]
+                and match(BackupData.Headers["Content-Type"], "application/json")
+                and options.AutoDecode
+                and Type(BackupData.Body) == "string" then
+                    local ok2, res = Pcall(game.HttpService.JSONDecode, game.HttpService, BackupData.Body);
+                    if ok2 then BackupData.Body = res end;
+                end;
             end
         end
+
+        printf("%s.request(%s)\n\nResponse Data: %s\n\n",
+               libtype,
+               Serializer.Serialize(RequestData),
+               Serializer.Serialize(BackupData)
+        );
 
         cresume(t, ResponseData)
     end)();
