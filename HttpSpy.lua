@@ -154,7 +154,15 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
             end
         end
 
-        cresume(t, hookFn and hookFn(ResponseData) or ResponseData)
+        -- Apply hook if found and modify the actual response
+        if hookFn then
+            local modifiedResponse = hookFn(ResponseData)
+            if modifiedResponse then
+                ResponseData = modifiedResponse
+            end
+        end
+
+        cresume(t, ResponseData)
     end)();
     return cyield();
 end));
@@ -246,4 +254,4 @@ function API:WhitelistUrl(url)
 end;
 
 return API;
- 
+
