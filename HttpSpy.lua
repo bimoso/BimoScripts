@@ -36,11 +36,7 @@ local blocked = options.BlockedURLs;
 local enabled = true;
 local reqfunc = (syn or http).request;
 local libtype = syn and "syn" or "http";
-local hooked = {
-    ["https://pandadevelopment.net/v2_validation?hwid="] = function(response)
-        print("Hooked URL: https://api.ejemplo.com/validate?key=");
-    end
-};
+local hooked = {};
 local proxied = {};
 local methods = {
     HttpGet = not syn,
@@ -157,13 +153,16 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
                 for i,v in Pairs(modifiedResponse) do BackupData[i] = v end;
                 
                 -- Re-decode JSON if modified Body is JSON and AutoDecode is enabled
-                if BackupData.Headers["Content-Type"]
+                if BackupData.Headers and BackupData.Headers["Content-Type"]
                 and match(BackupData.Headers["Content-Type"], "application/json")
                 and options.AutoDecode
                 and Type(BackupData.Body) == "string" then
                     local ok2, res = Pcall(game.HttpService.JSONDecode, game.HttpService, BackupData.Body);
                     if ok2 then BackupData.Body = res end;
                 end;
+            else
+                -- If hook doesn't return a modified response, just call it for side effects
+                hookFn(ResponseData)
             end
         end
 
