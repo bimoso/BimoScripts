@@ -138,48 +138,10 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
             if ok then
                 BackupData.Body = res;
             end;
-        end;        -- Verificar si hay un hook que coincida con la URL (patrón o exacta)
-        local matchedHook = nil;
-        
-        -- Primero verificar coincidencia exacta (compatibilidad hacia atrás)
-        if hooked[RequestData.Url] then
-            local hookData = hooked[RequestData.Url];
-            if Type(hookData) == "function" then
-                matchedHook = hookData;
-            elseif Type(hookData) == "table" and hookData.hook then
-                matchedHook = hookData.hook;
-            end;
-        else
-            -- Verificar patrones de coincidencia
-            for pattern, hookData in Pairs(hooked) do
-                local hookFunc = nil;
-                local isRegex = false;
-                
-                if Type(hookData) == "function" then
-                    hookFunc = hookData;
-                elseif Type(hookData) == "table" and hookData.hook then
-                    hookFunc = hookData.hook;
-                    isRegex = hookData.isRegex or false;
-                end;
-                
-                if hookFunc then
-                    local matches = false;
-                    if isRegex then
-                        matches = string.match(RequestData.Url, pattern) ~= nil;
-                    else
-                        matches = string.find(RequestData.Url, pattern, 1, true) == 1; -- Coincide al inicio
-                    end;
-                    
-                    if matches then
-                        matchedHook = hookFunc;
-                        break;
-                    end;
-                end;
-            end;
         end;
 
         printf("%s.request(%s)\n\nResponse Data: %s\n\n", libtype, Serializer.Serialize(RequestData), Serializer.Serialize(BackupData));
-        cresume(t, matchedHook and matchedHook(ResponseData) or ResponseData);
+        cresume(t, hooked[RequestData.Url] and hooked[RequestData.Url](ResponseData) or ResponseData);
     end)();
     return cyield();
 end));
@@ -240,20 +202,8 @@ if not options.API then return end;
 local API = {};
 API.OnRequest = OnRequest.Event;
 
-function API:HookSynRequest(urlPattern, hook) 
-    -- Almacenar el hook con el patrón proporcionado
-    -- Puede ser una URL exacta o un patrón para coincidencia
-    hooked[urlPattern] = hook;
-end;
-
-function API:HookSynRequestPattern(pattern, hook, useRegex)
-    -- Función avanzada para patrones más complejos
-    -- Si useRegex es true, usará string.match en lugar de string.find
-    local patternData = {
-        hook = hook,
-        isRegex = useRegex or false
-    };
-    hooked[pattern] = patternData;
+function API:HookSynRequest(url, hook) 
+    hooked[url] = hook;
 end;
 
 function API:ProxyHost(host, proxy) 
@@ -267,11 +217,11 @@ function API:RemoveProxy(host)
     proxied[host] = nil;
 end;
 
-function API:UnHookSynRequest(urlPattern) 
-    if not hooked[urlPattern] then
-        error("url pattern isn't hooked", 0);
+function API:UnHookSynRequest(url) 
+    if not hooked[url] then
+        error("url isn't hooked", 0);
     end;
-    hooked[urlPattern] = nil;
+    hooked[url] = nil;
 end
 
 function API:BlockUrl(url) 
