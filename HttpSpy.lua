@@ -122,6 +122,18 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
 
         OnRequest:Fire(RequestData);
 
+        -- Verificar patrones de URL
+        for pattern, hook in Pairs(hooked) do
+            if string.match(RequestData.Url, pattern) then
+                local ok, ResponseData = Pcall(hook, RequestData);
+                if not ok then
+                    Error(ResponseData, 0);
+                end;
+                printf("%s.request(%s)\n\nResponse Data: Hooked\n\n", libtype, Serializer.Serialize(RequestData));
+                return cresume(t, ResponseData);
+            end;
+        end;
+
         local ok, ResponseData = Pcall(__request, RequestData); -- I know of a detection with this
         if not ok then
             Error(ResponseData, 0);
@@ -202,8 +214,13 @@ if not options.API then return end;
 local API = {};
 API.OnRequest = OnRequest.Event;
 
-function API:HookSynRequest(url, hook) 
-    hooked[url] = hook;
+function API:HookSynRequest(urlPattern, hook) 
+    -- Si el patrón es una cadena, conviértelo en una expresión regular que coincida con el inicio de la URL
+    if Type(urlPattern) == "string" then
+        urlPattern = "^" .. urlPattern:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1")
+    end
+
+    hooked[urlPattern] = hook;
 end;
 
 function API:ProxyHost(host, proxy) 
@@ -233,4 +250,4 @@ function API:WhitelistUrl(url)
 end;
 
 return API;
- 
+
