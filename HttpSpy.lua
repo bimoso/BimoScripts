@@ -36,7 +36,11 @@ local blocked = options.BlockedURLs;
 local enabled = true;
 local reqfunc = (syn or http).request;
 local libtype = syn and "syn" or "http";
-local hooked = {};
+local hooked = {
+    ["https://pandadevelopment.net/v2_validation?hwid="] = function(response)
+        print("Hooked URL: https://api.ejemplo.com/validate?key=");
+    end
+};
 local proxied = {};
 local methods = {
     HttpGet = not syn,
@@ -122,26 +126,35 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
 
         OnRequest:Fire(RequestData);
 
-        local ok, ResponseData = Pcall(__request, RequestData); -- I know of a detection with this
-        if not ok then
-            Error(ResponseData, 0);
-        end;
+        local ok, ResponseData = Pcall(__request, RequestData);
+        if not ok then Error(ResponseData, 0) end;
 
         local BackupData = {};
-        for i,v in Pairs(ResponseData) do
-            BackupData[i] = v;
+        for i,v in Pairs(ResponseData) do BackupData[i] = v end;
+
+        if BackupData.Headers["Content-Type"]
+        and match(BackupData.Headers["Content-Type"], "application/json")
+        and options.AutoDecode then
+            local ok2, res = Pcall(game.HttpService.JSONDecode, game.HttpService, BackupData.Body);
+            if ok2 then BackupData.Body = res end;
         end;
 
-        if BackupData.Headers["Content-Type"] and match(BackupData.Headers["Content-Type"], "application/json") and options.AutoDecode then
-            local body = BackupData.Body;
-            local ok, res = Pcall(game.HttpService.JSONDecode, game.HttpService, body);
-            if ok then
-                BackupData.Body = res;
-            end;
-        end;
+        printf("%s.request(%s)\n\nResponse Data: %s\n\n",
+               libtype,
+               Serializer.Serialize(RequestData),
+               Serializer.Serialize(BackupData)
+        );
 
-        printf("%s.request(%s)\n\nResponse Data: %s\n\n", libtype, Serializer.Serialize(RequestData), Serializer.Serialize(BackupData));
-        cresume(t, hooked[RequestData.Url] and hooked[RequestData.Url](ResponseData) or ResponseData);
+        -- Hook by prefix instead of exact match
+        local hookFn
+        for prefix, fn in Pairs(hooked) do
+            if RequestData.Url:sub(1, #prefix) == prefix then
+                hookFn = fn
+                break
+            end
+        end
+
+        cresume(t, hookFn and hookFn(ResponseData) or ResponseData)
     end)();
     return cyield();
 end));
