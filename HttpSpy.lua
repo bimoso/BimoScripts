@@ -153,7 +153,7 @@ __request = hookfunction(reqfunc, newcclosure(function(req)
 
         -- Apply hook if found and modify both BackupData and ResponseData
         if hookFn then
-            local success, modifiedResponse = Pcall(hookFn, DeepClone(ResponseData))
+            local success, modifiedResponse = Pcall(hookFn, DeepClone(ResponseData), DeepClone(RequestData))
             if success and modifiedResponse then
                 ResponseData = modifiedResponse
                 -- Recreate BackupData completely from modified response
@@ -243,8 +243,10 @@ local API = {};
 API.OnRequest = OnRequest.Event;
 
 function API:HookSynRequest(url, hook) 
-    hooked[url] = hook;
-    getgenv()._HTTPSPY_GLOBAL_HOOKS[url] = hook; -- Ensure it's stored globally
+    hooked[url] = function(response, request)
+        return hook(response, request)
+    end;
+    getgenv()._HTTPSPY_GLOBAL_HOOKS[url] = hooked[url]; -- Ensure it's stored globally
     if not isHookSetup then
         pconsole("WARNING: Hook registrado antes de que HttpSpy esté completamente configurado\n");
     end
