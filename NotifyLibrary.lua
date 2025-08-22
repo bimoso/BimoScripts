@@ -15,7 +15,7 @@ local NotificationLibrary = {
         closeButtonSize = UDim2.new(0, 22, 0, 22),
         showStroke = true,
         useBackgroundColor = true,
-        backgroundTransparency = 0.05,
+    backgroundTransparency = 0.7,
         progressBarColor = Color3.fromRGB(255, 255, 255),
         progressBarTransparency = 0.3,
         progressBarHeight = 3
@@ -71,7 +71,7 @@ end
 function NotificationLibrary:_createNotificationFrame()
     local notification = Instance.new("Frame")
     notification.BackgroundColor3 = self._theme.primaryColor
-    notification.BackgroundTransparency = self._theme.useBackgroundColor and 0.2 or 1
+    notification.BackgroundTransparency = 0
     notification.Size = self:_getNotificationSize()
     notification.ClipsDescendants = true
     notification.ZIndex = 100
