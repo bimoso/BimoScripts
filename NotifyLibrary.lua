@@ -6,7 +6,7 @@ local NotificationLibrary = {
         successColor = Color3.fromRGB(0, 200, 120),
         errorColor = Color3.fromRGB(255, 60, 60),
         warningColor = Color3.fromRGB(255, 200, 60),
-        textColor = Color3.fromRGB(255, 255, 255),
+        textColor = Color3.fromRGB(75, 75, 75),
         cornerRadius = UDim.new(0, 8),
         iconSize = UDim2.new(0, 24, 0, 24),
         font = Enum.Font.GothamBold,
@@ -15,7 +15,7 @@ local NotificationLibrary = {
         closeButtonSize = UDim2.new(0, 22, 0, 22),
         showStroke = true,
         useBackgroundColor = true,
-    backgroundTransparency = 0.7,
+        backgroundTransparency = 0.05,
         progressBarColor = Color3.fromRGB(255, 255, 255),
         progressBarTransparency = 0.3,
         progressBarHeight = 3
@@ -71,7 +71,7 @@ end
 function NotificationLibrary:_createNotificationFrame()
     local notification = Instance.new("Frame")
     notification.BackgroundColor3 = self._theme.primaryColor
-    notification.BackgroundTransparency = 0
+    notification.BackgroundTransparency = self._theme.useBackgroundColor and 0.2 or 1
     notification.Size = self:_getNotificationSize()
     notification.ClipsDescendants = true
     notification.ZIndex = 100
